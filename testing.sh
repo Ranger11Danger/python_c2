@@ -6,7 +6,7 @@ tmux select-pane -t 0
 tmux send-keys -t "c2-testing" "python3 c2.py --ip 0.0.0.0 --port 4444" Enter
 sleep .5
 tmux select-pane -t 1
-tmux send-keys -t "c2-testing" "python3 callback.py" Enter
+tmux send-keys -t "c2-testing" "python3 payloads/test_payload.py" Enter
 sleep .5
 tmux select-pane -t 2
 tmux send-keys -t "c2-testing" "python3 console.py" Enter
