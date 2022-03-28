@@ -14,6 +14,13 @@ connect_argparser.add_argument("--port", help = "C2 port to connect to", default
 select_parser = Cmd2ArgumentParser()
 select_parser.add_argument("id", help = "Client ID to interact with")
 
+generate_parser = Cmd2ArgumentParser()
+generate_parser.add_argument("--ip", required=True, help="Port for implant to call back to")
+generate_parser.add_argument("--port", required=True, help="port for implant to call back too")
+generate_parser.add_argument("--format", required=True, choices=['python'], help="Payload code format")
+generate_parser.add_argument("--name", required=True, help="Name for the output file")
+
+
 class App(Cmd):
     console = Console()
     intro = "Welcome to the listener interface\nConnect to C2 server to start\n"
@@ -83,5 +90,10 @@ class App(Cmd):
         self.connection['socket'].send(json.dumps(payload).encode())
         response = self.connection['socket'].recv(50000)
         print(response.decode())
+    
+    @with_argparser(generate_parser)
+    def do_generate_payload(self, args):
+        self.do_run_pyscript(f"src/payload_templates/generate_python_payload.py --ip {args.ip} --port {args.port} --name {args.name}")
+        print(f"Payload Saved to 'payloads/{args.name}'")
 app = App()
 app.cmdloop()

