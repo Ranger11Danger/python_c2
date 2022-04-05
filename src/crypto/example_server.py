@@ -11,4 +11,6 @@ conn, addr = sock.accept()
 client_half = conn.recv(1024)
 conn.send(str(key_gen.half_key).encode())
 full_key = key_gen.gen_full(int(client_half.decode()))
-print(f"AES Secret: {full_key}")
+
+aes = ecdh.C2_AES(full_key)
+conn.send(aes.encrypt("secret password"))

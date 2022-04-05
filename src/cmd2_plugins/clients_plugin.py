@@ -7,8 +7,10 @@ select_parser.add_argument("id", help = "Client ID to interact with")
 
 class Plugin:
     def do_get_clients(self, args):
-        self.connection['socket'].send("get_clients".encode())
+        msg = self.encrypt_msg("get_clients", self.aes_secret)
+        self.connection['socket'].send(msg)
         data = self.connection['socket'].recv(1024)
+        data = self.decrypt_msg(data, self.aes_secret)
         data = json.loads(data.decode())
         table = Table("Client ID", "Hostname", "Remote IP", "Remote Port", "Connection Time", title="Connected Clients")
         for key, val in data.items():

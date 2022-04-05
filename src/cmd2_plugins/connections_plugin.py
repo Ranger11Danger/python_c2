@@ -18,6 +18,7 @@ class Plugin:
             self.console.log(f"Connected to {args.ip}")
             self.c2_ip = args.ip
             self.prompt = f"(Connected): "
+            self.aes_secret = self.negotiate_secret(self.connection["socket"])
         except:
             self.console.log(f"Unable to connect to {args.ip}")
     

