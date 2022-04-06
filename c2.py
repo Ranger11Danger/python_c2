@@ -60,19 +60,24 @@ class MyServer():
         self.cmd_connections.append(connection)
         aes_key = self.negotiate_secret(connection[0])
         while True:
-            data = connection[0].recv(1024)
+            data_len = connection[0].recv(8).decode()
+            data = connection[0].recv(int(data_len))
             data = self.decrypt_msg(data, aes_key)
             if data.decode() == "get_clients":
                 msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
+                connection[0].send(str(len(msg)).encode())
                 connection[0].send(msg)
             else:
                 data = json.loads(data.decode())
                 if 'command' in data:
                     msg = self.encrypt_msg(data["command"],self.client_sockets[int(data['client_id'])][1])
+                    self.client_sockets[int(data['client_id'])][0].send(str(len(msg)).encode())
                     self.client_sockets[int(data['client_id'])][0].send(msg)
-                    response = self.client_sockets[int(data['client_id'])][0].recv(50000)
+                    response_len = self.client_sockets[int(data['client_id'])][0].recv(8)
+                    response = self.client_sockets[int(data['client_id'])][0].recv(int(response_len.decode()))
                     response = self.decrypt_msg(response, self.client_sockets[int(data['client_id'])][1])
                     msg = self.encrypt_msg(response.decode(), aes_key)
+                    connection[0].send(str(len(msg)).encode())
                     connection[0].send(msg)
     #function to bind socket to port
     def bind(self, sock, host, port):
