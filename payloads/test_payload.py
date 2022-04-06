@@ -75,6 +75,9 @@ class implant:
             elif data.decode() == "ps":
                 data = subprocess.check_output(['ps', '-ef'])
                 self.send_msg(data.decode())
+            elif data.decode() == "heartbeat":
+                print("recieved heartbeat")
+                self.send_msg("im alive")
 
     def intro(self):
         key_gen = key()

@@ -13,5 +13,5 @@ tmux send-keys -t "c2-testing" "python3 console.py" Enter
 tmux send-keys -t "c2-testing" "set debug true" Enter
 tmux send-keys -t "c2-testing" "connect --ip 127.0.0.1" Enter
 tmux send-keys -t "c2-testing" "get_clients" Enter
-tmux send-keys -t "c2-testing" "select 0" Enter
+tmux send-keys -t "c2-testing" "select 1" Enter
 tmux attach -t "c2-testing"

