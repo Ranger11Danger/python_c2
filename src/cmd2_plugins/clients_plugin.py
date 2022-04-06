@@ -1,6 +1,7 @@
 from base64 import decode
 import json
 from rich.table import Table
+import time
 from cmd2 import Cmd2ArgumentParser, with_argparser
 
 select_parser = Cmd2ArgumentParser()
@@ -9,9 +10,7 @@ select_parser.add_argument("id", help = "Client ID to interact with")
 class Plugin:
     def do_get_clients(self, args):
         msg = self.encrypt_msg("get_clients", self.aes_secret)
-        self.connection['socket'].send(str(len(msg)).encode())
-        print(f"sending {len(msg)}")
-        self.connection['socket'].send(msg)
+        self.connection['socket'].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
         data_len = self.connection['socket'].recv(8)
         data = self.connection['socket'].recv(int(data_len.decode()))
         data = self.decrypt_msg(data, self.aes_secret)
