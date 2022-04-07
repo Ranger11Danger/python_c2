@@ -19,7 +19,7 @@ class App(
         src.cmd2_plugins.connections_plugin.Plugin, 
         src.cmd2_plugins.generate_plugin.Plugin,
         src.cmd2_plugins.commands_plugin.Plugin,
-        src.cmd2_plugins.file_manage_plugin,
+        src.cmd2_plugins.file_manage_plugin.Plugin,
         Cmd):
 
     console = Console()

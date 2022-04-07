@@ -9,7 +9,11 @@ select_parser.add_argument("id", help = "Client ID to interact with")
 
 class Plugin:
     def do_get_clients(self, args):
-        msg = self.encrypt_msg("get_clients", self.aes_secret)
+        payload = {
+            "client_id" : "c2",
+            "command" : "get_clients"
+        }
+        msg = self.encrypt_msg(json.dumps(payload), self.aes_secret)
         self.connection['socket'].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
         data_len = self.connection['socket'].recv(8)
         data = self.connection['socket'].recv(int(data_len.decode()))
@@ -34,7 +38,11 @@ class Plugin:
     
     def heartbeat(self):
         while True:
-            msg = self.encrypt_msg("heartbeat", self.aes_secret)
+            payload = {
+            "client_id" : "c2",
+            "command" : "heartbeat"
+        }
+            msg = self.encrypt_msg(json.dumps(payload), self.aes_secret)
             try:
                 self.connection['socket'].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
                 data_len = self.connection['socket'].recv(8)
