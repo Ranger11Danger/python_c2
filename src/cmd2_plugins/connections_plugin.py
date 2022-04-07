@@ -21,7 +21,7 @@ class Plugin:
             self.aes_secret = self.negotiate_secret(self.connection["socket"])
             thread = threading.Thread(target=self.heartbeat, args=[])
             #thread.daemon = True
-            thread.start()
+            #thread.start()
         except:
             self.console.log(f"Unable to connect to {args.ip}")
 

