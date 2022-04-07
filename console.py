@@ -10,6 +10,7 @@ import src.cmd2_plugins.clients_plugin
 import src.cmd2_plugins.connections_plugin
 import src.cmd2_plugins.generate_plugin
 import src.cmd2_plugins.commands_plugin
+import src.cmd2_plugins.file_manage_plugin
 
 
 class App(
@@ -18,6 +19,7 @@ class App(
         src.cmd2_plugins.connections_plugin.Plugin, 
         src.cmd2_plugins.generate_plugin.Plugin,
         src.cmd2_plugins.commands_plugin.Plugin,
+        src.cmd2_plugins.file_manage_plugin,
         Cmd):
 
     console = Console()

