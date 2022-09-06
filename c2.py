@@ -68,10 +68,9 @@ class MyServer():
         aes_key = self.negotiate_secret(connection[0])
         while True:
             data_len = connection[0].recv(16).decode()
-            print(data_len)
-            data = connection[0].recv(200000)
+            data = connection[0].recv(1024)
             while len(data) != int(data_len):
-                data += connection[0].recv(200000)
+                data += connection[0].recv(1024)
             
             data = self.decrypt_msg(data, aes_key)
             data = json.loads(data.decode())

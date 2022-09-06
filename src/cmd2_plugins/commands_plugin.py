@@ -18,7 +18,6 @@ class Plugin:
             "data" : data
         }
         msg = self.encrypt_msg(json.dumps(payload), self.aes_secret)
-        print(len(msg))
         self.connection['socket'].send(("0"*(16 - len(str(len(msg))))+str(len(msg))).encode() + msg)
         response_len = self.connection['socket'].recv(16)
         response = self.connection['socket'].recv(int(response_len.decode()))
